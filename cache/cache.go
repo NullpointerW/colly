@@ -38,7 +38,7 @@ func deserialization() error {
 		log.Printf("deserialization loadfailure :%s: \n", err)
 		return err
 	}
-	err = json.Unmarshal(raw, Rows.storage)
+	err = json.Unmarshal(raw, &Rows.storage)
 	if err != nil {
 		log.Printf("deserialization unmarshalfailure :%s: \n", err)
 		return err
