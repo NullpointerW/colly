@@ -1,4 +1,4 @@
-module jsontool
+module colly
 
 go 1.19
 
