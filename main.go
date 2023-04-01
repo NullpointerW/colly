@@ -25,7 +25,7 @@ func main() {
 				c.Redirect(301, hs[0].Link)
 			}
 		} else {
-			msg := fmt.Sprintf("tilte \"%s\" :not found", t)
+			msg := fmt.Sprintf(`tilte "%s" :not found`, t)
 			c.JSON(200, gin.H{
 				"msg": msg,
 			})
