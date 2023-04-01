@@ -3,13 +3,14 @@ package cache
 import (
 	colly "colly/crawler"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
 )
 
-var Rows *DB=&DB{}
+var Rows *DB = &DB{Indexer: Indexer{Index: make(map[string]*[]Row)}}
 
 type Row struct {
 	Title, Link string
@@ -20,14 +21,14 @@ type Indexer struct {
 
 type DB struct {
 	mu      sync.Mutex
-	storage map[string]string
+	Storage map[string]string
 	Indexer
 }
 
 func init() {
 	if err := deserialization(); err != nil {
-		Rows.storage = colly.Scrape()
-		b, _ := json.Marshal(Rows.storage)
+		Rows.Storage = colly.Scrape()
+		b, _ := json.Marshal(Rows.Storage)
 		os.WriteFile("./cache/dump.json", b, os.ModePerm)
 	}
 }
@@ -38,7 +39,7 @@ func deserialization() error {
 		log.Printf("deserialization loadfailure :%s: \n", err)
 		return err
 	}
-	err = json.Unmarshal(raw, &Rows.storage)
+	err = json.Unmarshal(raw, &Rows.Storage)
 	if err != nil {
 		log.Printf("deserialization unmarshalfailure :%s: \n", err)
 		return err
@@ -53,9 +54,14 @@ func (idx *Indexer) Hit(t string) (hits []Row, missed bool) {
 		return
 	} else {
 		for ft, h := range stg {
-			if strings.Contains(ft, t) {
-				stg[t] = h
-				hits = *h
+			// `abc` use `a`
+			if strings.Contains(t, ft) {
+				for   _,r:=  range *h{
+                    if  strings.Contains(r.Title,t){
+						hits=append(hits, r)
+					}
+				}
+				stg[t] = &hits
 				return
 			}
 		}
@@ -69,17 +75,17 @@ func (db *DB) Search(t string) []Row {
 	defer db.mu.Unlock()
 	if hs, m := db.Hit(t); m {
 		var hits []Row = nil
-		for tl, l := range db.storage {
+		for tl, l := range db.Storage {
 			if strings.Contains(tl, t) {
 				hits = append(hits, Row{tl, l})
 			}
-			if len(hits) != 0 {
-				db.Indexer.Index[t] = &hits
-			}
-			return hits
 		}
+		
+			db.Indexer.Index[t] = &hits
+		
+		return hits
 	} else {
+		fmt.Println("using index")
 		return hs
 	}
-	return nil
 }
