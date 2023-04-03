@@ -10,13 +10,13 @@ import (
 	"sync"
 )
 
-var Rows *DB = &DB{Indexer: Indexer{Index: make(map[string]*[]Row)}}
+var Rows *DB = &DB{Indexer: Indexer{Index: make(map[string]*[]*Row)}}
 
 type Row struct {
 	Title, Link string
 }
 type Indexer struct {
-	Index map[string]*[]Row
+	Index map[string]*[]*Row
 }
 
 type DB struct {
@@ -47,7 +47,7 @@ func deserialization() error {
 	return nil
 }
 
-func (idx *Indexer) Hit(t string) (hits []Row, missed bool) {
+func (idx *Indexer) Hit(t string) (hits []*Row, missed bool) {
 	stg := idx.Index
 	if r, exist := stg[t]; exist {
 		hits = *r
@@ -70,14 +70,14 @@ func (idx *Indexer) Hit(t string) (hits []Row, missed bool) {
 	}
 }
 
-func (db *DB) Search(t string) []Row {
+func (db *DB) Search(t string) []*Row {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 	if hs, m := db.Hit(t); m {
-		var hits []Row = nil
+		var hits []*Row = nil
 		for tl, l := range db.Storage {
 			if strings.Contains(tl, t) {
-				hits = append(hits, Row{tl, l})
+				hits = append(hits, &Row{tl, l})
 			}
 		}
 		
