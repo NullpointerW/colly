@@ -11,7 +11,10 @@ import (
 	"sync"
 )
 
-var Rows *DB = &DB{Indexer: Indexer{StringIndex: make(map[string]*[]*Row)}}
+var Rows *DB = &DB{Indexer: Indexer{
+	StringIndex: make(map[string]*[]*Row),
+	RegexpIndex: make(map[string]*[]*Row),
+}}
 
 type Row struct {
 	Title, Link string
@@ -106,7 +109,7 @@ func (db *DB) SearchWithRegexp(reg string) ([]*Row, error) {
 		var hits []*Row = nil
 		for tl, l := range db.Storage {
 			if matched, err := regexp.MatchString(reg, tl); err != nil {
-				return nil,err
+				return nil, err
 			} else if matched {
 				hits = append(hits, &Row{tl, l})
 			}
@@ -115,7 +118,7 @@ func (db *DB) SearchWithRegexp(reg string) ([]*Row, error) {
 		return hits, nil
 	} else {
 		fmt.Println("using index")
-		return hs,nil
+		return hs, nil
 	}
 
 }
