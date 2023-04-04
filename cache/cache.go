@@ -6,17 +6,19 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 )
 
-var Rows *DB = &DB{Indexer: Indexer{Index: make(map[string]*[]*Row)}}
+var Rows *DB = &DB{Indexer: Indexer{StringIndex: make(map[string]*[]*Row)}}
 
 type Row struct {
 	Title, Link string
 }
 type Indexer struct {
-	Index map[string]*[]*Row
+	StringIndex map[string]*[]*Row
+	RegexpIndex map[string]*[]*Row
 }
 
 type DB struct {
@@ -48,7 +50,7 @@ func deserialization() error {
 }
 
 func (idx *Indexer) Hit(t string) (hits []*Row, missed bool) {
-	stg := idx.Index
+	stg := idx.StringIndex
 	if r, exist := stg[t]; exist {
 		hits = *r
 		return
@@ -56,9 +58,9 @@ func (idx *Indexer) Hit(t string) (hits []*Row, missed bool) {
 		for ft, h := range stg {
 			// `abc` use `a`
 			if strings.Contains(t, ft) {
-				for   _,r:=  range *h{
-                    if  strings.Contains(r.Title,t){
-						hits=append(hits, r)
+				for _, r := range *h {
+					if strings.Contains(r.Title, t) {
+						hits = append(hits, r)
 					}
 				}
 				stg[t] = &hits
@@ -68,6 +70,15 @@ func (idx *Indexer) Hit(t string) (hits []*Row, missed bool) {
 		missed = true
 		return
 	}
+}
+func (idx *Indexer) RegexpHit(t string) (hits []*Row, missed bool) {
+	stg := idx.StringIndex
+	if r, exist := stg[t]; exist {
+		hits = *r
+		return
+	}
+	missed = true
+	return
 }
 
 func (db *DB) Search(t string) []*Row {
@@ -80,12 +91,31 @@ func (db *DB) Search(t string) []*Row {
 				hits = append(hits, &Row{tl, l})
 			}
 		}
-		
-			db.Indexer.Index[t] = &hits
-		
+		db.Indexer.StringIndex[t] = &hits
 		return hits
 	} else {
 		fmt.Println("using index")
 		return hs
 	}
+}
+
+func (db *DB) SearchWithRegexp(reg string) ([]*Row, error) {
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	if hs, m := db.Hit(reg); m {
+		var hits []*Row = nil
+		for tl, l := range db.Storage {
+			if matched, err := regexp.MatchString(reg, tl); err != nil {
+				return nil,err
+			} else if matched {
+				hits = append(hits, &Row{tl, l})
+			}
+		}
+		db.Indexer.StringIndex[reg] = &hits
+		return hits, nil
+	} else {
+		fmt.Println("using index")
+		return hs,nil
+	}
+
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"colly/cache"
 	"fmt"
-	
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,7 +29,34 @@ func main() {
 				"msg": msg,
 			})
 		}
-
 	})
-	r.Run(":8964") 
+
+	r.GET("/v2/:sc", func(c *gin.Context) {
+		reg := c.Param("sc")
+		hs, err := cache.Rows.SearchWithRegexp(reg)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"err": err,
+			})
+		}
+		if len := len(hs); len != 0 {
+			c.Header("Content-Type", "text/html; charset=utf-8")
+			if len > 1 {
+				var html string
+				for _, r := range hs {
+					html += fmt.Sprintf(`<a href="%s">%s</a><br>`, r.Link, r.Title)
+				}
+				c.String(200, html)
+			} else {
+				c.Redirect(301, hs[0].Link)
+			}
+		} else {
+			msg := fmt.Sprintf(`exp "%s" :not found`, reg)
+			c.JSON(200, gin.H{
+				"msg": msg,
+			})
+		}
+	})
+
+	r.Run(":8964")
 }
