@@ -25,7 +25,11 @@ go mod download
  ```
 curl http://localhost:8964/v1/{search title}
 ```
-*示例
+ * 正则搜索
+ ```
+curl http://localhost:8964/v2/{regexp}
+```
+* 示例
 
 ![example](https://raw.githubusercontent.com/NullpointerW/colly/master/example.png)
 
