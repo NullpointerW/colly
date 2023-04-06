@@ -75,7 +75,7 @@ func (idx *Indexer) Hit(t string) (hits []*Row, missed bool) {
 	}
 }
 func (idx *Indexer) RegexpHit(t string) (hits []*Row, missed bool) {
-	stg := idx.StringIndex
+	stg := idx.RegexpIndex
 	if r, exist := stg[t]; exist {
 		hits = *r
 		return
@@ -114,7 +114,7 @@ func (db *DB) SearchWithRegexp(reg string) ([]*Row, error) {
 				hits = append(hits, &Row{tl, l})
 			}
 		}
-		db.Indexer.StringIndex[reg] = &hits
+		db.Indexer.RegexpIndex[reg] = &hits
 		return hits, nil
 	} else {
 		fmt.Println("using index")
